@@ -8,6 +8,8 @@ import type { ManagedPackage } from '~bindings';
 export enum Provider {
 	Curseforge,
 	Modrinth,
+	FTBLegacy,
+	// Technic
 	Polyfrost,
 	Skyclient,
 }
@@ -34,7 +36,7 @@ function ModCard(props: ManagedPackage) {
 					<p class="text-fg-secondary text-xs">
 						By
 						{' '}
-						<span class="text-fg-primary">Author TODO</span>
+						<span class="text-fg-primary">Author</span>
 						{' '}
 						on
 						{' '}

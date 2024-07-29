@@ -3,7 +3,7 @@ use tauri::{Manager, Runtime};
 use tauri_plugin_updater::{Update as TauriPluginUpdate, UpdaterExt};
 use tokio::sync::Mutex;
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, specta::Type, serde::Serialize)]
 pub struct Update {
 	pub version: String,
 }
@@ -17,7 +17,7 @@ impl Update {
 }
 
 #[derive(Default)]
-pub struct State {
+pub struct UpdaterState {
 	install_lock: Mutex<()>,
 }
 
@@ -43,6 +43,7 @@ pub enum UpdateEvent {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_for_update(app: tauri::AppHandle) -> Result<Option<Update>, String> {
 	app.emit("updater", UpdateEvent::Loading).ok();
 
@@ -54,7 +55,7 @@ pub async fn check_for_update(app: tauri::AppHandle) -> Result<Option<Update>, S
 		}
 	};
 
-	let update = update.map(|update| Update::new(&update));
+	let update = update.map(|u| Update::new(&u));
 
 	app.emit(
 		"updater",
@@ -70,9 +71,10 @@ pub async fn check_for_update(app: tauri::AppHandle) -> Result<Option<Update>, S
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn install_update(
 	app: tauri::AppHandle,
-	state: tauri::State<'_, State>,
+	state: tauri::State<'_, UpdaterState>,
 ) -> Result<(), String> {
 	let lock = match state.install_lock.try_lock() {
 		Ok(lock) => lock,

@@ -29,6 +29,7 @@ onelauncher_macros = { workspace = true }
 tauri = { workspace = true, optional = true }
 tauri-specta = { workspace = true, optional = true }
 specta = { workspace = true, optional = true }
+rspc = { workspace = true, features = [ "tracing" ] }
 
 # CLI-only deps
 indicatif = { workspace = true, optional = true }

@@ -35,4 +35,10 @@ permissions = [
 
   # Other
   "allow-get-program-info",
+  "allow-reload-webview",
+  "allow-set-menu-bar-item-state",
+
+  # Updater
+  "allow-check-for-update",
+  "allow-install-update",
 ]

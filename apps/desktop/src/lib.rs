@@ -37,6 +37,7 @@ pub async fn run() {
 
 pub async fn run_app<F: FnOnce(&mut tauri::App) + Send + 'static>(setup: F) {
 	let builder = tauri::Builder::default()
+		.menu(crate::ext::menu::setup_menu)
 		.plugin(tauri_plugin_shell::init())
 		.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
 			println!("{}, {argv:?}, {cwd}", app.package_info().name);
@@ -46,9 +47,9 @@ pub async fn run_app<F: FnOnce(&mut tauri::App) + Send + 'static>(setup: F) {
 		.plugin(tauri_plugin_updater::Builder::new().build())
 		.plugin(tauri_plugin_clipboard_manager::init())
 		.plugin(ext::updater::plugin())
-		.manage(ext::updater::State::default())
+		.manage(ext::updater::UpdaterState::default())
+		// todo: bring back tauri plugin window state (its buggy right now)
 		// .plugin(tauri_plugin_window_state::Builder::default().build())
-		.menu(tauri::menu::Menu::new)
 		.setup(move |app| {
 			setup(app);
 			Ok(())
@@ -71,7 +72,7 @@ pub async fn run_app<F: FnOnce(&mut tauri::App) + Send + 'static>(setup: F) {
 		tracing::error!("{err}");
 	};
 
-	app.run(|_app_handle, _event| {})
+	app.run(|_, _| {});
 }
 
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {

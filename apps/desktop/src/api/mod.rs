@@ -36,6 +36,7 @@ impl From<onelauncher::Error> for OneLauncherSerializableError {
 	}
 }
 
+// TODO: i really need to fix this lmao
 #[derive(thiserror::Error, Debug)]
 pub enum OneLauncherError {
 	#[error("{0}")]
@@ -46,6 +47,9 @@ pub enum OneLauncherError {
 
 	#[error("failed to handle tauri management: {0}")]
 	Tauri(#[from] tauri::Error),
+
+	#[error("anyhow error: {0}")]
+	AnyhowError(#[from] anyhow::Error),
 
 	#[cfg(target_os = "macos")]
 	#[error("failed to handle callback: {0}")]
@@ -61,7 +65,7 @@ macro_rules! impl_serialize_err {
 			where
 				S: Serializer,
 			{
-                use serde::ser::SerializeStruct;
+				use serde::ser::SerializeStruct;
 				match self {
 					OneLauncherError::OneLauncher(onelauncher_error) => {
 						$crate::error::display_tracing_error(onelauncher_error);

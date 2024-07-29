@@ -33,6 +33,11 @@ fn main() {
 					"download_mod",
 					// Other
 					"get_program_info",
+					"reload_webview",
+					"set_menu_bar_item_state",
+					// Updater
+					"check_for_update",
+					"install_update"
 				]),
 			),
 	)
