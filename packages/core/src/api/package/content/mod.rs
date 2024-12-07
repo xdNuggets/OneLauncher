@@ -17,7 +17,6 @@ use crate::{Result, State};
 
 mod curseforge;
 mod modrinth;
-mod skyclient;
 
 /// Providers for content packages
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -25,7 +24,6 @@ mod skyclient;
 pub enum Providers {
 	Modrinth,
 	Curseforge,
-	SkyClient,
 }
 
 impl std::fmt::Display for Providers {
@@ -41,7 +39,6 @@ impl Providers {
 		match self {
 			Self::Modrinth => "Modrinth",
 			Self::Curseforge => "Curseforge",
-			Self::SkyClient => "SkyClient",
 		}
 	}
 
@@ -51,12 +48,11 @@ impl Providers {
 		match self {
 			Self::Modrinth => "https://modrinth.com",
 			Self::Curseforge => "https://curseforge.com",
-			Self::SkyClient => "https://skyclient.co",
 		}
 	}
 
 	pub const fn get_providers() -> &'static [Providers] {
-		&[Self::Modrinth, Self::Curseforge, Self::SkyClient]
+		&[Self::Modrinth, Self::Curseforge]
 	}
 
 	#[allow(clippy::too_many_arguments)]
@@ -102,37 +98,35 @@ impl Providers {
 				)
 				.await
 			}
-			Self::SkyClient => {
-				skyclient::search(
-					query,
-					limit,
-					offset,
-					game_versions,
-					loaders
-				).await
-			},
 		}
 	}
 
 	pub async fn get(&self, slug_or_id: &str) -> Result<ManagedPackage> {
 		Ok(match self {
 			Self::Modrinth => modrinth::get(slug_or_id).await?.into(),
-			Self::Curseforge => curseforge::get(slug_or_id.parse::<u32>().map_err(|err| anyhow::anyhow!(err))?).await?.into(),
-			Self::SkyClient => skyclient::get(slug_or_id).await?.into(),
+			Self::Curseforge => curseforge::get(
+				slug_or_id
+					.parse::<u32>()
+					.map_err(|err| anyhow::anyhow!(err))?,
+			)
+			.await?
+			.into(),
 		})
 	}
 
 	pub async fn get_multiple(&self, slug_or_ids: &[String]) -> Result<Vec<ManagedPackage>> {
-		if slug_or_ids.len() <= 0 {
-			return Ok(vec![]);
-		}
-
 		Ok(match self {
-			Self::Modrinth => modrinth::get_multiple(slug_or_ids)
+			Self::Modrinth => {
+				if slug_or_ids.len() <= 0 {
+					return Ok(vec![]);
+				}
+
+				modrinth::get_multiple(slug_or_ids)
 					.await?
 					.into_iter()
 					.map(Into::into)
-					.collect(),
+					.collect()
+			},
 			Self::Curseforge => {
 				let parsed_ids = slug_or_ids
 					.iter()
@@ -151,11 +145,6 @@ impl Providers {
 					.map(Into::into)
 					.collect()
 			},
-			Self::SkyClient => skyclient::get_multiple(slug_or_ids)
-				.await?
-				.into_iter()
-				.map(Into::into)
-				.collect(),
 		})
 	}
 
@@ -177,8 +166,6 @@ impl Providers {
 				let data = curseforge::get_all_versions(project_id, game_versions, loaders, page, page_size).await?;
 				(data.0.into_iter().map(Into::into).collect(), data.1)
 			}
-
-			Self::SkyClient => todo!(),
 		})
 	}
 
@@ -194,7 +181,6 @@ impl Providers {
 				.into_iter()
 				.map(Into::into)
 				.collect(),
-			Self::SkyClient => todo!(),
 		})
 	}
 
@@ -229,8 +215,7 @@ impl Providers {
 				.await?
 				.into_iter()
 				.map(|(hash, version)| (hash, version.into()))
-				.collect(),
-			Self::SkyClient => todo!(),
+				.collect()
 		})
 	}
 }

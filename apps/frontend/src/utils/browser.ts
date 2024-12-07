@@ -93,5 +93,4 @@ const modMapping: Record<Providers, CategoryItem[]> = {
 		{ display: 'Utility', id: 'utility' },
 		{ display: 'World Generation', id: 'worldgen' },
 	],
-	SkyClient: [],
 };
