@@ -14,6 +14,7 @@ import SettingsAccounts from './game/SettingsAccounts';
 import SettingsMinecraft from './game/SettingsMinecraft';
 import SettingsAppearance from './launcher/SettingsAppearance';
 import SettingsGeneral from './launcher/SettingsGeneral';
+import SkinChangerPage from './account/SkinChanger';
 
 function SettingsRoutes() {
 	return (
@@ -25,11 +26,14 @@ function SettingsRoutes() {
 			{/* Game Settings */}
 			<Route component={SettingsMinecraft} path="/minecraft" />
 			<Route component={SettingsAccounts} path="/accounts" />
+			<Route component={SkinChangerPage} path="/skin" />
 
 			{/* About */}
 			<Route component={SettingsFeedback} path="/feedback" />
 			<Route component={SettingsChangelog} path="/changelog" />
 			<Route component={SettingsDeveloper} path="/developer" />
+
+
 		</>
 	);
 }

@@ -1,4 +1,4 @@
-import { InfoCircleIcon, Trash01Icon, UserPlus02Icon } from '@untitled-theme/icons-solid';
+import { Edit01Icon, InfoCircleIcon, Trash01Icon, UserPlus02Icon } from '@untitled-theme/icons-solid';
 import Button from '~ui/components/base/Button';
 import Tooltip from '~ui/components/base/Tooltip';
 import PlayerHead from '~ui/components/game/PlayerHead';
@@ -6,6 +6,7 @@ import useAccountController from '~ui/components/overlay/account/AddAccountModal
 import ScrollableContainer from '~ui/components/ScrollableContainer';
 import Sidebar from '~ui/components/Sidebar';
 import { createSignal, For, Match, mergeProps, Show, Switch } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 
 function SettingsAccounts() {
 	const controller = useAccountController();
@@ -71,6 +72,7 @@ interface AccountRowProps {
 };
 
 function AccountRow(props: AccountRowProps) {
+	const navigate = useNavigate();
 	const defaultProps = mergeProps({ current: false }, props);
 	const [errored, setErrored] = createSignal(false);
 
@@ -101,7 +103,19 @@ function AccountRow(props: AccountRowProps) {
 				<p class="text-wrap text-sm text-fg-secondary">{props.uuid}</p>
 			</div>
 
-			<div class="">
+			<div class="flex flex-row gap-2">
+				<Tooltip content="Change Skin" position="top" text='Change Skin'>
+					<Button
+					buttonStyle='icon'
+					children={<Edit01Icon/>}
+					onClick={() => {
+						navigate("/settings/skin")
+						console.log("Change Skin")
+					}}
+					/>
+				</Tooltip>
+
+
 				<Button
 					buttonStyle="iconDanger"
 					children={<Trash01Icon />}

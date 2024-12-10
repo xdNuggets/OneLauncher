@@ -11,6 +11,8 @@ use serde_json::json;
 use sha2::Digest;
 use std::collections::HashMap;
 use std::fmt::Write;
+use std::fs::File;
+use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::constants::{AUTH_FILE, MINECRAFT_CLIENT_ID, MINECRAFT_REDIRECT_URL, MINECRAFT_SCOPES};
@@ -375,6 +377,15 @@ pub struct MinecraftLogin {
 	pub session_id: String,
 	/// The xboxlive redirect URI.
 	pub redirect_uri: String,
+}
+
+// Struct for a Minecraft skin. Used for the skin changer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(feature="specta", derive(specta::Type))]
+pub struct MinecraftSkin {
+    pub id: Uuid,
+    pub name: String,
+    pub src: Vec<u8>,
 }
 
 /// A structure of all needed Minecraft credentials for logging in and account management.

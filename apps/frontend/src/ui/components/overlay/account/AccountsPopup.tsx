@@ -1,11 +1,12 @@
 import type { MinecraftCredentials } from '@onelauncher/client/bindings';
 import { useNavigate } from '@solidjs/router';
-import { PlusIcon, Settings01Icon } from '@untitled-theme/icons-solid';
+import { Edit01Icon, PlusIcon, Settings01Icon } from '@untitled-theme/icons-solid';
 import { For, Show } from 'solid-js';
 import Button from '../../base/Button';
 import PlayerHead from '../../game/PlayerHead';
 import Popup, { type PopupProps } from '../Popup';
 import useAccountController from './AddAccountModal';
+import Tooltip from '~ui/components/base/Tooltip';
 
 interface AccountComponentProps {
 	account: MinecraftCredentials | null | undefined;
@@ -14,6 +15,8 @@ interface AccountComponentProps {
 
 function AccountComponent(props: AccountComponentProps) {
 	const controller = useAccountController();
+
+	const navigate = useNavigate();
 
 	function login() {
 		if (props.loggedIn === true)
@@ -30,13 +33,23 @@ function AccountComponent(props: AccountComponentProps) {
 				onClick={login}
 			>
 				<div class="flex flex-1 flex-row justify-start gap-x-3">
-					<PlayerHead class="h-8 w-8 rounded-md" uuid={props.account!.id} />
+        			<PlayerHead class="h-8 w-8 rounded-md" uuid={props.account!.id} />
 					<div class="flex flex-col items-center justify-center">
 						<div class="flex flex-col items-start justify-between">
 							<p class="h-[18px] font-semibold">{props.account!.username}</p>
 							{props.loggedIn && <p class="text-xs">Logged in</p>}
 						</div>
 					</div>
+				</div>
+				<div class="justify-end flex items-center">
+						<Tooltip content="Change Skin" position="top" text='Change Skin'>
+						<Button
+						buttonStyle='icon'
+						onClick={() => navigate("/settings/skin")}
+						>
+							<Edit01Icon class="stroke-fg-primary"/>
+						</Button>
+						</Tooltip>
 				</div>
 
 				{/* <Show when={props.loggedIn}>

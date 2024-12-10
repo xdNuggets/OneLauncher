@@ -12,12 +12,13 @@ pub mod package;
 pub mod processor;
 pub mod proxy;
 pub mod settings;
+pub mod skin;
 
 pub mod data {
 	pub use crate::store::{
 		ClusterMeta, Credentials, Directories, InitHooks, JavaOptions, Loader, ManagedDependency,
 		ManagedPackage, ManagedUser, ManagedVersion, Memory, MinecraftCredentials, PackageData,
-		PackageType, Resolution, Settings,
+		PackageType, Resolution, Settings, SkinController
 	};
 }
 

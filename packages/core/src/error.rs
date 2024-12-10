@@ -123,6 +123,9 @@ pub enum ErrorKind {
 	#[cfg(feature = "tauri")]
 	#[error("error handling tauri: {0}")]
 	TauriError(#[from] tauri::Error),
+
+	#[error("Failed to manage skin: {0}")]
+	SkinError(String),
 }
 
 /// A safe, accessible error structure wrapper around [`ErrorKind`] for use with [`tracing_error`].

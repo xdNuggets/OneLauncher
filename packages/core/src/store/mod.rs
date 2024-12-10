@@ -46,6 +46,9 @@ pub use self::package::*;
 mod oneconfig;
 pub use self::oneconfig::*;
 
+pub mod skin;
+pub use self::skin::*;
+
 /// The static [`OnceCell<RwLock<State>>`] for storing the global runtime launcher state.
 static LAUNCHER_STATE: OnceCell<RwLock<State>> = OnceCell::const_new();
 
@@ -87,6 +90,9 @@ pub struct State {
 	pub(crate) watcher: RwLock<Debouncer<RecommendedWatcher>>,
 	/// Handles Discord rich prescence
 	pub discord_rpc: DiscordRPC,
+
+	// Handles skins
+	pub skin: RwLock<SkinController>
 }
 
 impl State {
@@ -154,6 +160,8 @@ impl State {
 
 		let processor = Processor::new();
 
+		let skin = SkinController::initialize().await?;
+
 		Self::status_loop();
 		send_ingress(&ingress, 10.0, None).await?;
 
@@ -175,6 +183,7 @@ impl State {
 			ingress_processor: RwLock::new(ingress_processor),
 			watcher: RwLock::new(watcher),
 			discord_rpc,
+			skin: RwLock::new(skin),
 		}))
 	}
 
