@@ -4,17 +4,17 @@ import Popup from '../Popup';
 import NotificationComponent from './NotificationComponent';
 
 export default function NotificationOverlay() {
-	const [notifications] = useNotifications();
+	const notifications = useNotifications();
 
 	return (
 		<Popup
 			mount={document.body}
-			ref={ref => ref.classList.add('fixed', 'bottom-8', 'right-8')}
+			ref={ref => ref.classList.add('fixed', 'bottom-8', 'right-8', 'z-99999')}
 			setVisible={() => {}}
 			visible={() => true}
 		>
 			<div class="flex flex-col-reverse gap-2">
-				<For each={Object.values(notifications())}>
+				<For each={Object.values(notifications.list())}>
 					{notification => (
 						<NotificationComponent overlay {...notification} />
 					)}

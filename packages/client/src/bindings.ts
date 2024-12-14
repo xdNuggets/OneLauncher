@@ -204,6 +204,16 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
+	async getOptimalJavaVersion(clusterId: string): Promise<Result<JavaVersion, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_optimal_java_version', { clusterId }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
 	async getRunningClusters(): Promise<Result<Cluster[], string>> {
 		try {
 			return { status: 'ok', data: await TAURI_INVOKE('get_running_clusters') };
@@ -584,6 +594,26 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
+	async getZuluPackages(): Promise<Result<JavaZuluPackage[], string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_zulu_packages') };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async installJavaFromPackage(download: JavaZuluPackage): Promise<Result<string, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('install_java_from_package', { download }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
 };
 
 /** user-defined events */
@@ -833,6 +863,7 @@ export interface JavaVersion { version: string; arch: string; path: string };
  * A `HashMap` of all located and installed available Java versions
  */
 export type JavaVersions = { [key in string]: JavaVersion };
+export interface JavaZuluPackage { download_url: string; name: string; java_version: number[] };
 export interface License { id?: string; name?: string; url?: string | null };
 /**
  * Available mod loaders to be used for a cluster.
@@ -886,7 +917,7 @@ export interface ManagedDependency { version_id: string | null; package_id: stri
 /**
  * Universal metadata for any managed package from a Mod distribution platform.
  */
-export interface ManagedPackage { provider: Providers; id: string; package_type: PackageType; title: string; description: string; body: PackageBody; main: string; versions: string[]; game_versions: string[]; loaders: Loader[]; icon_url: string | null; created: string; updated: string; client: PackageSide; server: PackageSide; downloads: bigint; followers: number; categories: string[]; optional_categories: string[] | null; license: License | null; author: Author; is_archived: boolean };
+export interface ManagedPackage { provider: Providers; id: string; package_type: PackageType; title: string; description: string; body: PackageBody; main: string; versions: string[]; game_versions: string[]; loaders: Loader[]; icon_url: string | null; created: string | null; updated: string | null; client: PackageSide; server: PackageSide; downloads: bigint; followers: number; categories: string[]; optional_categories: string[] | null; license: License | null; author: Author; is_archived: boolean };
 /**
  * Universal metadata for any managed user from a Mod distribution platform.
  */
@@ -894,7 +925,7 @@ export interface ManagedUser { id: string; username: string; url?: string | null
 /**
  * Universal managed package version of a package.
  */
-export interface ManagedVersion { id: string; package_id: string; author: string; name: string; featured: boolean; version_display: string; changelog: string; changelog_url: string | null; published: string; downloads: number; version_type: ManagedVersionReleaseType; files: ManagedVersionFile[]; is_available: boolean; deps: ManagedDependency[]; game_versions: string[]; loaders: Loader[] };
+export interface ManagedVersion { id: string; package_id: string; author: string; name: string; featured: boolean; version_display: string; changelog: string; changelog_url: string | null; published: string | null; downloads: number; version_type: ManagedVersionReleaseType; files: ManagedVersionFile[]; is_available: boolean; deps: ManagedDependency[]; game_versions: string[]; loaders: Loader[] };
 /**
  * Universal interface for managed package files.
  */
@@ -1020,12 +1051,12 @@ export interface ProviderSearchResults { provider: Providers; results: SearchRes
 /**
  * Providers for content packages
  */
-export type Providers = 'Modrinth' | 'Curseforge';
+export type Providers = 'Modrinth' | 'Curseforge' | 'SkyClient';
 /**
  * Global Minecraft resolution.
  */
 export type Resolution = [number, number];
-export interface SearchResult { slug: string; title: string; description: string; categories?: string[]; client_side: PackageSide; server_side: PackageSide; project_type: PackageType; downloads: bigint; icon_url?: string; project_id: string; author: string; display_categories?: string[]; versions: string[]; follows: number; date_created: string; date_modified: string };
+export interface SearchResult { slug: string; title: string; description: string; categories?: string[]; client_side: PackageSide; server_side: PackageSide; project_type: PackageType; downloads: bigint; icon_url?: string; project_id: string; author: string; versions: string[]; follows: number; date_created: string | null; date_modified: string | null };
 /**
  * A global settings state for the launcher.
  */

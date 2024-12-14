@@ -1,15 +1,18 @@
-import type { JavaVersion, JavaVersions, Memory, Resolution } from '@onelauncher/client/bindings';
-import { ActivityIcon, CpuChip01Icon, Database01Icon, EyeIcon, FilePlus02Icon, FileX02Icon, LayoutTopIcon, Maximize01Icon, ParagraphWrapIcon, VariableIcon, XIcon } from '@untitled-theme/icons-solid';
+import type { JavaVersion, JavaVersions, JavaZuluPackage, Memory, Resolution } from '@onelauncher/client/bindings';
+import { ActivityIcon, CpuChip01Icon, Database01Icon, Download01Icon, EyeIcon, FilePlus02Icon, FileX02Icon, LayoutTopIcon, Maximize01Icon, ParagraphWrapIcon, VariableIcon, XIcon } from '@untitled-theme/icons-solid';
+import { bridge } from '~imports';
 import Button from '~ui/components/base/Button';
+import Dropdown from '~ui/components/base/Dropdown';
 import TextField from '~ui/components/base/TextField';
 import Toggle from '~ui/components/base/Toggle';
-import Modal, { createModal } from '~ui/components/overlay/Modal';
+import Modal, { createModal, type ModalProps } from '~ui/components/overlay/Modal';
 import ScrollableContainer from '~ui/components/ScrollableContainer';
 import BaseSettingsRow, { type SettingsRowProps } from '~ui/components/SettingsRow';
 import Sidebar from '~ui/components/Sidebar';
+import { tryResult } from '~ui/hooks/useCommand';
 import useSettings from '~ui/hooks/useSettings';
 import { asEnvVariables } from '~utils';
-import { type Accessor, createSignal, For, onMount, type Setter, Show, splitProps, untrack } from 'solid-js';
+import { type Accessor, createMemo, createResource, createSignal, For, onMount, type Setter, Show, splitProps, untrack } from 'solid-js';
 
 function SettingsMinecraft() {
 	return (
@@ -293,43 +296,33 @@ export function ProcessSettings(props: {
 }
 
 export function JvmSettings(props: {
-	javaVersion: CreateSetting<JavaVersion> | undefined;
-	javaVersions: CreateSetting<JavaVersions> | undefined;
 	javaArgs: CreateSetting<string[]>;
 	envVars: CreateSetting<[string, string][]>;
-}) {
-	const modal = createModal(controller => (
-		<Modal.Simple
-			buttons={[
-				<Button
-					buttonStyle="secondary"
-					children="Close"
-					onClick={controller.hide}
-				/>,
-			]}
-			title="Java Versions"
-			{...controller}
-		>
-			<div class="grid grid-cols-[80px_1fr] items-center gap-y-2">
-				<For each={Object.entries(props.javaVersions?.get() ?? {}).sort((a, b) => Number.parseFloat(b[1].version) - Number.parseFloat(a[1].version))}>
-					{([version, meta]) => {
-						const prettified = version.toLowerCase().replaceAll('_', ' ');
-						return (
-							<>
-								<span class="capitalize">{prettified}</span>
-								<TextField
-									onValidSubmit={(value) => {
-										props.javaVersions?.set({ ...props.javaVersions.get(), [version]: { ...meta, path: value } });
-									}}
-									value={meta.path}
-								/>
-							</>
-						);
-					}}
-				</For>
-			</div>
-		</Modal.Simple>
-	));
+} & ({
+	clusterId: string;
+	javaVersion: CreateSetting<JavaVersion | null>;
+	javaVersions: CreateSetting<JavaVersions>;
+} | {
+	javaVersion: undefined;
+	javaVersions: CreateSetting<JavaVersions>;
+})) {
+	const modal = createModal((controller) => {
+		if (props.javaVersion)
+			return (
+				<ClusterJavaVersionModal
+					{...controller}
+					clusterId={props.clusterId}
+					javaVersion={props.javaVersion}
+					javaVersions={props.javaVersions}
+				/>
+			);
+		else return (
+			<GlobalJavaVersionModal
+				{...controller}
+				javaVersions={props.javaVersions}
+			/>
+		);
+	});
 
 	return (
 		<>
@@ -469,3 +462,187 @@ function PageSettings() {
 }
 
 export default SettingsMinecraft;
+
+function ClusterJavaVersionModal(props: ModalProps & {
+	clusterId: string;
+	javaVersion: CreateSetting<JavaVersion | null>;
+	javaVersions: CreateSetting<JavaVersions>;
+}) {
+	const [_, modalProps] = splitProps(props, ['javaVersion', 'javaVersions']);
+
+	const javaVersions = createMemo(() => Object.entries(props.javaVersions).sort((a, b) => Number.parseFloat(b[1].version) - Number.parseFloat(a[1].version)));
+	const [selected, setSelected] = createSignal<number>(0);
+
+	onMount(async () => {
+		const javaVersion = props.javaVersion.get();
+		if (!javaVersion) {
+			const clusterId = props.clusterId;
+			const optimal = await tryResult(() => bridge.commands.getOptimalJavaVersion(clusterId));
+			setSelected(javaVersions().findIndex(([_, meta]) => meta.path === optimal.path));
+		}
+		else {
+			const found = javaVersions().findIndex(([_, meta]) => meta.path === javaVersion.path);
+			setSelected(found);
+		}
+	});
+
+	const setPackage = (pkg: JavaVersion, version: string) => {
+		props.javaVersion.set(pkg);
+		props.javaVersions.set({
+			...props.javaVersions?.get(),
+			[`JAVA_${version}`]: pkg,
+		});
+	};
+
+	const onChange = (selected: number) => {
+		const version = javaVersions()[selected]?.[0];
+		if (!version)
+			return;
+
+		const meta = props.javaVersions.get()[version];
+		if (!meta)
+			return;
+
+		setPackage(meta, version);
+	};
+
+	return (
+		<BaseJavaVersionModal
+			{...modalProps}
+			setPackage={setPackage}
+		>
+			<h4>Java Path</h4>
+			<div class="flex flex-col items-stretch gap-y-2">
+				<Dropdown onChange={onChange} selected={selected}>
+					<For each={javaVersions()}>
+						{([version]) => {
+							const major = version.toLowerCase().replaceAll('_', ' ').replaceAll('java', '');
+
+							return (
+								<Dropdown.Row>
+									<span class="capitalize">
+										Java
+										{major}
+									</span>
+								</Dropdown.Row>
+							);
+						}}
+					</For>
+				</Dropdown>
+			</div>
+		</BaseJavaVersionModal>
+	);
+}
+
+function GlobalJavaVersionModal(props: ModalProps & {
+	javaVersions: CreateSetting<JavaVersions>;
+}) {
+	const [_, modalProps] = splitProps(props, ['javaVersions']);
+
+	const setPackage = (pkg: JavaVersion, version: string) => {
+		props.javaVersions?.set({
+			...props.javaVersions?.get(),
+			[`JAVA_${version}`]: pkg,
+		});
+	};
+
+	return (
+		<BaseJavaVersionModal
+			{...modalProps}
+			setPackage={setPackage}
+		>
+			<h4>Default Java Paths</h4>
+			<div class="grid grid-cols-[80px_1fr] items-center gap-y-2">
+				<For each={Object.entries(props.javaVersions?.get() ?? {}).sort((a, b) => Number.parseFloat(b[1].version) - Number.parseFloat(a[1].version))}>
+					{([version, meta]) => {
+						const major = version.toLowerCase().replaceAll('_', ' ').replaceAll('java', '');
+
+						return (
+							<>
+								<span class="capitalize">
+									Java
+									{major}
+								</span>
+								<TextField
+									onValidSubmit={(value) => {
+										setPackage({ ...meta, path: value }, major);
+									}}
+									value={meta.path}
+								/>
+							</>
+						);
+					}}
+				</For>
+			</div>
+		</BaseJavaVersionModal>
+	);
+}
+
+function BaseJavaVersionModal(props: ModalProps & {
+	setPackage: (pkg: JavaVersion, version: string) => void;
+}) {
+	const [selectedPackageIndex, setSelectedPackageIndex] = createSignal<number>(-1);
+
+	const [zuluPackages] = createResource(async () => {
+		try {
+			return await tryResult(bridge.commands.getZuluPackages);
+		}
+		catch (e) {
+			console.error(e);
+			return [];
+		}
+	});
+
+	const foundVersions = createMemo(() => {
+		return zuluPackages()?.map(pkg => pkg.java_version.join('.')) ?? [];
+	});
+
+	const download = async (pkg: JavaZuluPackage) => {
+		const path = await tryResult(() => bridge.commands.installJavaFromPackage(pkg));
+		if (path)
+			props.setPackage({
+				version: pkg.java_version.join('.'),
+				path,
+				arch: '',
+			}, pkg.java_version[0]!.toString());
+	};
+
+	return (
+		<Modal.Simple
+			buttons={[
+				<Button
+					buttonStyle="secondary"
+					children="Close"
+					onClick={props.hide}
+				/>,
+			]}
+			title="Java Versions"
+			{...props}
+		>
+			<div class="flex flex-col gap-6">
+				<div class="flex flex-col gap-2">
+					{props.children}
+				</div>
+
+				<div class="flex flex-col gap-2">
+					<h4>Download Java</h4>
+					<div class="w-full flex flex-row gap-2">
+						<Dropdown class="w-full" onChange={setSelectedPackageIndex}>
+							<For each={foundVersions()}>
+								{version => (
+									<Dropdown.Row>{version}</Dropdown.Row>
+								)}
+							</For>
+						</Dropdown>
+
+						<Button
+							children="Download"
+							iconLeft={<Download01Icon />}
+							onClick={() => download(zuluPackages()![selectedPackageIndex()]!)}
+						/>
+					</div>
+				</div>
+			</div>
+		</Modal.Simple>
+	);
+}

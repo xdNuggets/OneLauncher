@@ -75,8 +75,8 @@ impl From<ModrinthPackage> for ManagedPackage {
 			game_versions: value.game_versions,
 			loaders: value.loaders,
 			icon_url: value.icon_url,
-			created: value.published,
-			updated: value.updated,
+			created: Some(value.published),
+			updated: Some(value.updated),
 			client: value.client_side,
 			server: value.server_side,
 			downloads: value.downloads as u64,
@@ -177,7 +177,7 @@ impl From<ModrinthVersion> for ManagedVersion {
 			changelog: value.changelog,
 			changelog_url: value.changelog_url,
 
-			published: value.date_published,
+			published: Some(value.date_published),
 			downloads: value.downloads,
 			version_type: ManagedVersionReleaseType::from(value.version_type),
 
