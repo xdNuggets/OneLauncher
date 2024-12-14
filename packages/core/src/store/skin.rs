@@ -1,5 +1,6 @@
-use std::{fs::{self, OpenOptions}, io::Error, sync::Arc};
+use std::{fs::{self}, io::Error};
 use uuid::Uuid;
+use base64::encode;
 
 use crate::ErrorKind;
 
@@ -35,7 +36,7 @@ impl SkinController {
 				let mc_skin = MinecraftSkin {
 					id: Uuid::parse_str(split.first().unwrap()).unwrap(),
 					name: split.last().unwrap().to_string(),
-					src: fs::read(entry.path())?,
+					src: encode(fs::read(entry.path())?), // Deprecated but im too lazy to use a better method
 				};
 				skins_vec.push(mc_skin);
 			}
@@ -62,27 +63,13 @@ impl SkinController {
 	}
 
 	#[tracing::instrument]
-	pub async fn get_current_skin(&self) -> crate::Result<Option<MinecraftSkin>> {
-		match &self.current_skin {
-			Some(s) => {
-				let skin = self.skins.iter().find(|skin| skin.id == s.id);
-				match skin {
-					Some(skin) => Ok(Some(skin.clone())),
-					None => Err(ErrorKind::SkinError("Skin not found".to_string()).into()),
-				}
-			}
-			None => Ok(None),
-		}
-	}
-
-	#[tracing::instrument]
 	pub async fn add_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
 		self.skins.push(skin);
 		Ok(())
 	}
 
 	#[tracing::instrument]
-	pub async fn set_current_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
+	pub async fn set_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
 		let index = self.skins.iter().position(|s: &MinecraftSkin| s.id == skin.id);
 		match index {
 			Some(_index) => {

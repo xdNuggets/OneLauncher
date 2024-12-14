@@ -504,6 +504,56 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
+	async getSkin(uuid: string): Promise<Result<MinecraftSkin, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_skin', { uuid }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async setSkin(skin: MinecraftSkin): Promise<Result<null, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('set_skin', { skin }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async getSkins(): Promise<Result<MinecraftSkin[], string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_skins') };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async addSkin(skin: MinecraftSkin): Promise<Result<null, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('add_skin', { skin }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async removeSkin(uuid: string): Promise<Result<null, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('remove_skin', { uuid }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
 	async setWindowStyle(custom: boolean): Promise<Result<null, string>> {
 		try {
 			return { status: 'ok', data: await TAURI_INVOKE('set_window_style', { custom }) };
@@ -891,7 +941,9 @@ export interface MinecraftCredentials {
 	 * The time that the access token expires as a [`DateTime<Utc>`].
 	 */
 	expires: string;
+	skin: MinecraftSkin;
 };
+export interface MinecraftSkin { id: string; name: string; src: string };
 export interface OfflinePayload { offline: boolean };
 /**
  * A struct that represents a Package.

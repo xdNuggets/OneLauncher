@@ -11,8 +11,6 @@ use serde_json::json;
 use sha2::Digest;
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::fs::File;
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::constants::{AUTH_FILE, MINECRAFT_CLIENT_ID, MINECRAFT_REDIRECT_URL, MINECRAFT_SCOPES};
@@ -195,6 +193,11 @@ impl MinecraftState {
 		minecraft_entitlements(&minecraft_token.access_token).await?;
 		let profile = minecraft_profile(&minecraft_token.access_token).await?;
 		let profile_id = profile.id.unwrap_or_default();
+		let skin = MinecraftSkin {
+			id: Uuid::new_v4(),
+			name: profile.name.clone(),
+			src: profile.name.clone(),
+		};
 		let credentials = MinecraftCredentials {
 			id: profile_id,
 			username: profile.name,
@@ -203,6 +206,7 @@ impl MinecraftState {
 			#[allow(deprecated)]
 			expires: oauth_token.date
 				+ chrono::TimeDelta::seconds(oauth_token.value.expires_in as i64),
+			skin
 		};
 
 		self.users.insert(profile_id, credentials.clone());
@@ -241,6 +245,11 @@ impl MinecraftState {
 		)
 		.await?;
 		let minecraft_token = minecraft_token(xbox_token.value).await?;
+		let skin = MinecraftSkin {
+			id: Uuid::new_v4(),
+			name: cred_name.clone(),
+			src: cred_name.clone(),
+		};
 		let val = MinecraftCredentials {
 			id: cred_id,
 			username: cred_name,
@@ -249,6 +258,7 @@ impl MinecraftState {
 			#[allow(deprecated)]
 			expires: oauth_token.date
 				+ chrono::TimeDelta::seconds(oauth_token.value.expires_in as i64),
+			skin
 		};
 
 		self.users.insert(val.id, val.clone());
@@ -385,7 +395,7 @@ pub struct MinecraftLogin {
 pub struct MinecraftSkin {
     pub id: Uuid,
     pub name: String,
-    pub src: Vec<u8>,
+    pub src: String,
 }
 
 /// A structure of all needed Minecraft credentials for logging in and account management.
@@ -402,6 +412,8 @@ pub struct MinecraftCredentials {
 	pub refresh_token: String,
 	/// The time that the access token expires as a [`DateTime<Utc>`].
 	pub expires: DateTime<Utc>,
+	// The Minecraft skin of the user. (Fetched upon creation from the username :) )
+	pub skin: MinecraftSkin,
 }
 
 #[tracing::instrument(skip(key))]

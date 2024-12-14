@@ -1,0 +1,13 @@
+{
+  "build": {
+    "features": []
+  },
+  "bundle": {
+    "macOS": {
+      "minimumSystemVersion": ""
+    }
+  },
+  "plugins": {
+    "updater": {}
+  }
+}

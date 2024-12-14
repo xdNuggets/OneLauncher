@@ -9,6 +9,7 @@ import NotificationOverlay from './ui/components/overlay/notifications/Notificat
 import WindowFrame from './ui/components/WindowFrame';
 import { BrowserProvider } from './ui/hooks/useBrowser';
 import { SettingsProvider } from './ui/hooks/useSettings';
+import { SkinControllerProvider } from '~ui/pages/settings/account/SkinChanger';
 
 function RootLayout(props: ParentProps) {
 	onMount(() => {
@@ -43,6 +44,7 @@ function GlobalContexts(props: ParentProps) {
 				AccountControllerProvider,
 				ClusterModalControllerProvider,
 				BrowserProvider,
+				SkinControllerProvider
 			]}
 		>
 			{props.children}

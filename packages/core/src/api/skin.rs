@@ -34,12 +34,5 @@ pub async fn remove_skin(uuid: Uuid) -> crate::Result<()> {
 pub async fn set_skin(skin: MinecraftSkin) -> crate::Result<()> {
 	let state = State::get().await?;
 	let mut skins = state.skin.write().await;
-	Ok(skins.set_current_skin(skin).await?)
-}
-
-#[tracing::instrument]
-pub async fn get_current_skin() -> crate::Result<Option<MinecraftSkin>> {
-	let state = State::get().await?;
-	let skins = state.skin.read().await;
-	Ok(skins.get_current_skin().await?)
+	Ok(skins.set_skin(skin).await?)
 }
