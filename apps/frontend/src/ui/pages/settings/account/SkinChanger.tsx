@@ -1,10 +1,13 @@
 import type { MinecraftSkin } from "@onelauncher/client/bindings";
 import { CheckIcon, PlusIcon, Trash01Icon } from "@untitled-theme/icons-solid";
 import { createContext, createEffect, createSignal, useContext, type Context, type ParentProps, type ResourceReturn } from "solid-js";
+import { set } from "zod";
 import { bridge } from "~imports";
 import Button from "~ui/components/base/Button";
+import TextField from "~ui/components/base/TextField";
 import Tooltip from "~ui/components/base/Tooltip";
 import useAccountController from "~ui/components/overlay/account/AddAccountModal";
+import Modal, { createModal, type ModalProps } from "~ui/components/overlay/Modal";
 import useCommand, { tryResult } from '~ui/hooks/useCommand';
 
 
@@ -12,14 +15,6 @@ const PlayerModel = ({src, limitSize} : {src: string, limitSize?: boolean}) => {
 	return <img src={"https://vzge.me/full/384/" + src} alt="model" class={limitSize ? "h-60 w-37" : ""} />
 }
 
-const sampleSkins: MinecraftSkin[] = [
-	{id: "1", name: "JoshDoesOF", src: "JoshDoesOF"},
-	{id: "2", name: "JoshDoesOF", src: "Notch"},
-	{id: "3", name: "JoshDoesOF", src: "JustThiemo"},
-	{id: "4", name: "JoshDoesOF", src: "hypixel"},
-	{id: "5", name: "JoshDoesOF", src: "DongerOfDongs"},
-	{id: "6", name: "JoshDoesOF", src: "JoshDoesOF"},
-]
 
 
 export default function SkinChangerPage() {
@@ -31,7 +26,7 @@ export default function SkinChangerPage() {
 	createEffect(async () => {
 		const skins = await skinController.getSkins();
 		console.log("current account: " +accountController.defaultAccount.latest?.skin.name);
-		console.log("skin" + skinController.currentSkin?.name);
+		console.log("skin" + skinController.currentSkin);
 		if(skins) {
 			setSkins(skins);
 		} else {
@@ -41,7 +36,7 @@ export default function SkinChangerPage() {
 
 
 	return (
-		<div class="flex items-center h-full justify-between">
+		<div class={`flex items-center h-full ${skins.length == 0 ? "justify-around" : ""}`}>
 			{/* Current Skin / Add new one */}
 			<div class="flex ml-[10px] flex-col items-center">
 				<p class="text-2lg">Current skin</p>
@@ -52,13 +47,25 @@ export default function SkinChangerPage() {
 			</div>
 
 			{/* Skin Library */}
-			<div class="grid gap-x-20 gap-y-5 md:grid-cols-6 sm:grid-cols-3">
+			{ skins.length != 0 ? (
+				<div class="grid gap-x-20 gap-y-5 md:grid-cols-6 sm:grid-cols-3">
+					{skins().map(skin => {
+						return (
+							<SkinDisplayComponent skin={skin}/>
+						)
+					})}
+				</div>
+			) : (
+				<div class="flex justify-center text-xl">
+					No skins found
+				</div>
+			)
 
-				{sampleSkins.length != 0 ? sampleSkins.map(skin => <SkinDisplayComponent skin={skin} />) : <div>No skins found</div>}
-			</div>
+		}
 		</div>
 	)
 }
+
 
 
 interface SkinDisplayProps {
@@ -96,7 +103,20 @@ function SkinDisplayComponent(props: SkinDisplayProps) {
 }
 
 const FileUploadButton = () => {
-	const inputRef = createSignal<HTMLInputElement | null>(null);
+	const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
+	const [skinName, setSkinName] = createSignal<string>("");
+
+	const inputNameModal = createModal((props: ModalProps) => {
+		const [modalProps, p] = Modal.SplitProps(props);
+
+		return (
+		<Modal.Simple {...modalProps} title="Name your skin">
+			<TextField placeholder="Skin Name" onValidSubmit={(input) => {
+				setSkinName(input);
+			}} />
+		</Modal.Simple>
+		)
+		});
 
 	function onFileChange(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -108,11 +128,13 @@ const FileUploadButton = () => {
 
 			reader.onload = () => {
 				const encodedString = (reader.result as string).split(",")[1];
-				if(!encodedString) { return; }
+				if(!encodedString) return;
+				inputNameModal.show();
+
 				const uuid = crypto.randomUUID();
 				const skin: MinecraftSkin = {
 					id: uuid,
-					name: uuid + file.name,
+					name: skinName(),
 					src: encodedString!!,
 				};
 
@@ -132,15 +154,14 @@ const FileUploadButton = () => {
 	}
 
 	function handleButtonClick() {
-		if (inputRef[0]()) {
-			inputRef[0]()!!.click();
-		}
+		console.log("Clicked")
+		inputRef()?.click();
 	}
 
 	return (
 		<>
 			<Button buttonStyle="icon" onClick={handleButtonClick}><PlusIcon/></Button>
-			<input type="file" onChange={onFileChange} ref={inputRef[0]} style={{display: "none"}} onchange={onFileChange} />
+			<input type="file" onChange={onFileChange} ref={setInputRef} style={{display: "none"}} onchange={onFileChange} />
 		</>
 	)
 }
