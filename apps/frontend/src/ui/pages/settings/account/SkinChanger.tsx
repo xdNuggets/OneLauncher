@@ -18,7 +18,6 @@ const PlayerModel = ({src, limitSize} : {src: string, limitSize?: boolean}) => {
 
 
 export default function SkinChangerPage() {
-	// TODO: Implement adding skin to the account by downloading it from some place idfk
 	const accountController = useAccountController();
 	const skinController = useSkinController();
 	const [skins, setSkins] = createSignal<MinecraftSkin[]>([]);
@@ -42,7 +41,7 @@ export default function SkinChangerPage() {
 				<p class="text-2lg">Current skin</p>
 				<PlayerModel src={skinController.currentSkin!!.src}/>
 				<Tooltip title="Add Skin" text="Add Skin" position="bottom">
-					<FileUploadButton/>
+
 				</Tooltip>
 			</div>
 
