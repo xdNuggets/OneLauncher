@@ -15,6 +15,8 @@ use uuid::Uuid;
 
 use crate::constants::{AUTH_FILE, MINECRAFT_CLIENT_ID, MINECRAFT_REDIRECT_URL, MINECRAFT_SCOPES};
 
+use super::State;
+
 /// The core state of Microsoft authentication for the launcher
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MinecraftState {
@@ -193,13 +195,24 @@ impl MinecraftState {
 		minecraft_entitlements(&minecraft_token.access_token).await?;
 		let profile = minecraft_profile(&minecraft_token.access_token).await?;
 		let profile_id = profile.id.unwrap_or_default();
-		let skin = MinecraftSkin {
+
+		let mut skin = MinecraftSkin {
 			id: Uuid::new_v4(),
 			name: profile.name.clone(),
 			src: profile.name.clone(),
+			current: false
 		};
+
+		if self.default_user.is_none() {
+			self.default_user = Some(profile_id);
+			skin.current = true;
+		}
+		let state = State::get().await?;
+		let mut skin_controller = state.skin.write().await;
+		skin_controller.add_skin(skin.clone()).await?;
+
 		let credentials = MinecraftCredentials {
-			id: profile_id,
+			id: profile_id.clone(),
 			username: profile.name,
 			access_token: minecraft_token.access_token,
 			refresh_token: oauth_token.value.refresh_token,
@@ -210,10 +223,6 @@ impl MinecraftState {
 		};
 
 		self.users.insert(profile_id, credentials.clone());
-
-		if self.default_user.is_none() {
-			self.default_user = Some(profile_id);
-		}
 
 		self.save().await?;
 
@@ -249,7 +258,13 @@ impl MinecraftState {
 			id: Uuid::new_v4(),
 			name: cred_name.clone(),
 			src: cred_name.clone(),
+			current: true // this probably shouldnt be true
 		};
+
+		let state = State::get().await?;
+		let mut skin_controller = state.skin.write().await;
+		skin_controller.add_skin(skin.clone()).await?;
+
 		let val = MinecraftCredentials {
 			id: cred_id,
 			username: cred_name,
@@ -396,6 +411,7 @@ pub struct MinecraftSkin {
     pub id: Uuid,
     pub name: String,
     pub src: String,
+	pub current: bool,
 }
 
 /// A structure of all needed Minecraft credentials for logging in and account management.

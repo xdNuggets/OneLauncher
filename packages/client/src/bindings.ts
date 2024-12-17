@@ -564,6 +564,16 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
+	async saveSkins(): Promise<Result<null, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('save_skins') };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
 	async setWindowStyle(custom: boolean): Promise<Result<null, string>> {
 		try {
 			return { status: 'ok', data: await TAURI_INVOKE('set_window_style', { custom }) };
@@ -974,7 +984,7 @@ export interface MinecraftCredentials {
 	expires: string;
 	skin: MinecraftSkin;
 };
-export interface MinecraftSkin { id: string; name: string; src: string };
+export interface MinecraftSkin { id: string; name: string; src: string; current: boolean };
 export interface OfflinePayload { offline: boolean };
 /**
  * A struct that represents a Package.

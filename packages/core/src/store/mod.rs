@@ -159,9 +159,7 @@ impl State {
 		}
 
 		let processor = Processor::new();
-
 		let skin = SkinController::initialize().await?;
-
 		Self::status_loop();
 		send_ingress(&ingress, 10.0, None).await?;
 

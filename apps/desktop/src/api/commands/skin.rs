@@ -30,3 +30,9 @@ pub async fn remove_skin(uuid: Uuid) -> Result<(), String> {
 pub async fn set_skin(skin: MinecraftSkin) -> Result<(), String> {
 	Ok(skin::set_skin(skin).await?)
 }
+
+#[specta::specta]
+#[tauri::command]
+pub async fn save_skins() -> Result<(), String> {
+	Ok(skin::save_skins().await?)
+}

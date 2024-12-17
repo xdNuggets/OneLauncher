@@ -32,6 +32,12 @@ impl Directories {
 		Ok(settings_dir.join("settings.json"))
 	}
 
+	#[inline]
+	pub fn init_skins_file() -> crate::Result<PathBuf> {
+		let skins_dir = Self::init_settings_dir().ok_or(DirectoryError::ConfigDir)?;
+		Ok(skins_dir.join("skins.json"))
+	}
+
 	/// Initialize the core directory manager
 	#[tracing::instrument]
 	pub fn initalize(settings: &Settings) -> crate::Result<Self> {
@@ -176,6 +182,12 @@ impl Directories {
 	#[inline]
 	pub async fn icons_dir(&self) -> PathBuf {
 		self.config_dir.read().await.join("icons")
+	}
+
+	/// Get the `config_dir/skins` directory.
+	#[inline]
+	pub async fn skins_dir(&self) -> PathBuf {
+		self.config_dir.read().await.join(constants::SKINS_FILE)
 	}
 }
 

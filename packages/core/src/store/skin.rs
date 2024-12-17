@@ -1,10 +1,9 @@
-use std::{fs::{self}, io::Error};
+use std::{fs::{self, File}, io::Write};
 use uuid::Uuid;
-use base64::encode;
 
 use crate::ErrorKind;
 
-use super::MinecraftSkin;
+use super::{Directories, MinecraftSkin};
 
 #[derive(Debug, Clone)]
 pub struct SkinController {
@@ -14,36 +13,34 @@ pub struct SkinController {
 
 impl SkinController {
 	#[tracing::instrument]
-	pub async fn initialize() -> Result<SkinController, Error> {
+	pub async fn initialize() -> Result<SkinController, crate::Error> {
 		// Get all existing skins from the database; else create a new vector.
-		let skins_dir = std::path::Path::new("skins");
-		if !skins_dir.exists() {
-			fs::create_dir(skins_dir)?;
+		let skins_path = Directories::init_skins_file()?;
+		let file_exists = skins_path.exists();
+		if !file_exists {
+			println!("does not exist");
+			let mut file = File::create(&skins_path)?;
+			file.write(b"[]")?;
 			Ok(SkinController {
 				skins: Vec::new(),
 				current_skin: None,
 			})
 
+
+
 		} else {
+			println!("exists");
 			// Do stuff if it exists. Fill the cache with all files
-			let skins = fs::read_dir(skins_dir)?;
-			let mut skins_vec = Vec::new();
+			let skins_content = fs::read_to_string(skins_path)?;
+			let skins_vec: Vec<MinecraftSkin> = serde_json::from_str(&skins_content)?;
 
-			for skin_entry in skins {
-				let entry = skin_entry?;
-				let file_name = entry.file_name().into_string().unwrap();
-				let split = file_name.split('_').collect::<Vec<&str>>();
-				let mc_skin = MinecraftSkin {
-					id: Uuid::parse_str(split.first().unwrap()).unwrap(),
-					name: split.last().unwrap().to_string(),
-					src: encode(fs::read(entry.path())?), // Deprecated but im too lazy to use a better method
-				};
-				skins_vec.push(mc_skin);
+			let mut skins = Vec::new();
+			for skin_entry in skins_vec {
+				skins.push(skin_entry);
 			}
+			let current_skin = skins.iter().find(|skin| skin.current).cloned();
 
-			let current_skin = skins_vec.iter().find(|skin| skin.name.contains("current_skin")).cloned();
-
-			Ok(SkinController { skins: skins_vec, current_skin })
+			Ok(SkinController { skins, current_skin })
 		}
 
 	}
@@ -51,6 +48,15 @@ impl SkinController {
 	#[tracing::instrument]
 	pub async fn get_skins(&self) -> crate::Result<Vec<MinecraftSkin>> {
 		Ok(self.skins.clone())
+	}
+
+	pub async fn save(&self) -> crate::Result<()> {
+		println!("{:?}", &self.skins);
+		let json_obj = serde_json::to_string_pretty(&self.skins).unwrap();
+		println!("{:?}", json_obj);
+		let skins_path = Directories::init_skins_file()?;
+		fs::write(skins_path, json_obj).unwrap();
+		Ok(())
 	}
 
 	#[tracing::instrument]
@@ -65,18 +71,24 @@ impl SkinController {
 	#[tracing::instrument]
 	pub async fn add_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
 		self.skins.push(skin);
+		self.save().await?;
 		Ok(())
 	}
 
 	#[tracing::instrument]
 	pub async fn set_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
-		let index = self.skins.iter().position(|s: &MinecraftSkin| s.id == skin.id);
-		match index {
-			Some(_index) => {
-				self.current_skin = Some(skin);
-				Ok(())
-			}
-			None => Err(ErrorKind::SkinError("Skin not found".to_string()).into()),
+		// unset the current saved skin
+		if let Some(current) = self.skins.iter_mut().find(|s| s.current) {
+			current.current = true;
+		}
+
+		// update the target skin
+		if let Some(target) = self.skins.iter_mut().find(|s| s.id == skin.id) {
+			target.current = true;
+			self.save().await?;
+			Ok(())
+		} else {
+			Err(ErrorKind::SkinError("Skin not found".to_string()).into())
 		}
 	}
 

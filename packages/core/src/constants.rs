@@ -69,6 +69,11 @@ pub const AUTH_FILE: &str = "authentication.json";
 /// [`Processor`]: crate::store::Processor
 pub const PROCESSOR_FILE: &str = "processor.json";
 
+/// The public `skins.json` file used to store skins.
+///
+/// [`SkinController`]: crate::store::SkinController
+pub const SKINS_FILE: &str = "skins.json";
+
 /// The current [`Settings`] format version, bumped for breaking changes.
 /// If updated, a config file migration logic **NEEDS** to be implemented.
 ///

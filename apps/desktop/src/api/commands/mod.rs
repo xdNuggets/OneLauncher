@@ -1,6 +1,5 @@
 use interpulse::api::minecraft::Version;
 use onelauncher::data::Settings;
-use onelauncher::game::metadata;
 use onelauncher::settings;
 use tauri::{AppHandle, Manager};
 
@@ -90,6 +89,7 @@ macro_rules! collect_commands {
 			get_skins,
 			add_skin,
 			remove_skin,
+			save_skins,
 			// Other
 			set_window_style,
 			get_program_info,
