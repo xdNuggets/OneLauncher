@@ -21,14 +21,16 @@ export default function SkinChangerPage() {
 	const currentSkin = skinController.currentSkin == null ? accountController.defaultAccount()?.skin : skinController.currentSkin;
 
 	return (
-		<div class={`flex items-center h-full ${skins.length != 0 ? "justify-around" : ""}`}>
+		<div class={`flex items-center h-full justify-around`}>
 			{/* Current Skin / Add new one */}
 			<div class="flex ml-[10px] flex-col items-center">
 				<p class="text-2lg">Current skin</p>
 				<PlayerModel src={currentSkin!!.src}/>
-				<Tooltip title="Add Skin" text="Add Skin" position="bottom">
-					<FileUploadButton refetch={skinController.refetch}/>
-				</Tooltip>
+				<div>
+					<Tooltip title="Add Skin" text="Add Skin" position="bottom">
+						<FileUploadButton refetch={skinController.refetch}/>
+					</Tooltip>
+				</div>
 			</div>
 
 			{/* Skin Library */}
@@ -53,13 +55,21 @@ function SkinDisplayComponent(props: SkinDisplayProps) {
 
 	const SelectSkinButton = () => {
 		return (
-			<Button buttonStyle="iconPrimary" onClick={() => {useCommand(() => bridge.commands.setSkin(props.skin))}}><CheckIcon/></Button>
+			<Tooltip title="Set Skin" text="Set Skin" position="bottom">
+				<Button buttonStyle="iconPrimary" onClick={() => {
+					console.log("Set current skin to: ", props.skin.name)
+					useCommand(() => bridge.commands.setSkin(props.skin))
+					
+					}}><CheckIcon/></Button>
+			</Tooltip>
 		)
 	}
 
 	const DeleteSkinButton = () => {
 		return (
-			<Button buttonStyle="iconDanger" onClick={() => {useCommand(() => bridge.commands.removeSkin(props.skin.id))}} class=""><Trash01Icon/></Button>
+			<Tooltip title="Delete Skin" text="Delete Skin" position="bottom">
+				<Button buttonStyle="iconDanger" onClick={() => {useCommand(() => bridge.commands.removeSkin(props.skin.id))}} class=""><Trash01Icon/></Button>
+			</Tooltip>
 		)
 	}
 

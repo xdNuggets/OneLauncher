@@ -79,7 +79,7 @@ impl SkinController {
 	pub async fn set_skin(&mut self, skin: MinecraftSkin) -> crate::Result<()> {
 		// unset the current saved skin
 		if let Some(current) = self.skins.iter_mut().find(|s| s.current) {
-			current.current = true;
+			current.current = false;
 		}
 
 		// update the target skin
