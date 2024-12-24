@@ -74,7 +74,6 @@ function SkinDisplayComponent(props: SkinDisplayProps) {
 
 					useCommand(() => bridge.commands.setSkin(props.skin))
 					skinController.refetch();
-					location.reload();
 					}}>
 						<CheckIcon/></Button>
 			</Tooltip>
