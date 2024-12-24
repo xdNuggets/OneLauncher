@@ -574,6 +574,16 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
+	async getCurrentSkin(): Promise<Result<MinecraftSkin | null, string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_current_skin') };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
 	async setWindowStyle(custom: boolean): Promise<Result<null, string>> {
 		try {
 			return { status: 'ok', data: await TAURI_INVOKE('set_window_style', { custom }) };

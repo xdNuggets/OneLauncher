@@ -230,9 +230,10 @@ Modal.Delete = function (props: ModalDeleteProps) {
 	function startInterval(visible: boolean) {
 		if (visible !== true)
 			return;
+		if(split.timeLeft && split.timeLeft <= 0) return;
 
 		clearIntervalId();
-		setTimeLeft(split.timeLeft || 3);
+		setTimeLeft(split.timeLeft ?? 3);
 
 		const intervalId = setInterval(() => {
 			setTimeLeft((prev) => {

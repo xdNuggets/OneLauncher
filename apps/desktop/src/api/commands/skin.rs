@@ -36,3 +36,9 @@ pub async fn set_skin(skin: MinecraftSkin) -> Result<(), String> {
 pub async fn save_skins() -> Result<(), String> {
 	Ok(skin::save_skins().await?)
 }
+
+#[specta::specta]
+#[tauri::command]
+pub async fn get_current_skin() -> Result<Option<MinecraftSkin>, String> {
+	Ok(skin::get_current_skin().await?)
+}

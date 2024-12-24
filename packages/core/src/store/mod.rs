@@ -90,7 +90,6 @@ pub struct State {
 	pub(crate) watcher: RwLock<Debouncer<RecommendedWatcher>>,
 	/// Handles Discord rich prescence
 	pub discord_rpc: DiscordRPC,
-
 	// Handles skins
 	pub skin: RwLock<SkinController>
 }

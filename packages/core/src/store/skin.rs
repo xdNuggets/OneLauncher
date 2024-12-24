@@ -18,7 +18,6 @@ impl SkinController {
 		let skins_path = Directories::init_skins_file()?;
 		let file_exists = skins_path.exists();
 		if !file_exists {
-			println!("does not exist");
 			let mut file = File::create(&skins_path)?;
 			file.write(b"[]")?;
 			Ok(SkinController {
@@ -29,7 +28,6 @@ impl SkinController {
 
 
 		} else {
-			println!("exists");
 			// Do stuff if it exists. Fill the cache with all files
 			let skins_content = fs::read_to_string(skins_path)?;
 			let skins_vec: Vec<MinecraftSkin> = serde_json::from_str(&skins_content)?;
@@ -51,9 +49,7 @@ impl SkinController {
 	}
 
 	pub async fn save(&self) -> crate::Result<()> {
-		println!("{:?}", &self.skins);
 		let json_obj = serde_json::to_string_pretty(&self.skins).unwrap();
-		println!("{:?}", json_obj);
 		let skins_path = Directories::init_skins_file()?;
 		fs::write(skins_path, json_obj).unwrap();
 		Ok(())
@@ -93,13 +89,20 @@ impl SkinController {
 	}
 
 	pub async fn remove_skin(&mut self, uuid: Uuid) -> crate::Result<()> {
-		let index = self.skins.iter().position(|skin| skin.id == uuid);
-		match index {
-			Some(index) => {
-				self.skins.remove(index);
+		let skin_to_remove = self.skins.iter().find(|skin| skin.id == uuid);
+		match skin_to_remove {
+			Some(skin) => {
+				self.skins.retain(|skin| skin.id != uuid);
+				self.save().await?;
 				Ok(())
 			}
 			None => Err(ErrorKind::SkinError("Skin not found".to_string()).into()),
 		}
 	}
+
+	pub async fn get_current_skin(&mut self) -> crate::Result<Option<MinecraftSkin>> {
+		let skin = self.skins.iter_mut().find(|s| s.current);
+		Ok(skin.cloned())
+	}
+
 }

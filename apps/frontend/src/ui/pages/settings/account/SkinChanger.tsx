@@ -8,6 +8,7 @@ import Tooltip from "~ui/components/base/Tooltip";
 import useAccountController from "~ui/components/overlay/account/AddAccountModal";
 import Modal, { createModal, type ModalProps } from "~ui/components/overlay/Modal";
 import useCommand, { tryResult } from '~ui/hooks/useCommand';
+import useNotifications from "~ui/hooks/useNotifications";
 
 
 const PlayerModel = ({src, limitSize} : {src: string, limitSize?: boolean}) => {
@@ -16,23 +17,29 @@ const PlayerModel = ({src, limitSize} : {src: string, limitSize?: boolean}) => {
 
 export default function SkinChangerPage() {
 	const skinController = useSkinController();
-	const accountController = useAccountController();
 	const skins = skinController.skins;
-	const currentSkin = skinController.currentSkin == null ? accountController.defaultAccount()?.skin : skinController.currentSkin;
+
+
+	const CurrentSkinDisplay = () => {
+		const accountController = useAccountController();
+		const currentSkin = skinController.currentSkin;
+		return (
+			<div class="flex ml-[10px] flex-col items-center">
+				<p class="text-2lg">Current skin</p>
+				<PlayerModel src={currentSkin()!!.src ?? accountController.defaultAccount()?.skin.src}/>
+				<div>
+					<Tooltip title="Add Skin" text="Add Skin" position="bottom">
+						<FileUploadButton/>
+					</Tooltip>
+				</div>
+			</div>
+		)
+	}
 
 	return (
 		<div class={`flex items-center h-full justify-around`}>
 			{/* Current Skin / Add new one */}
-			<div class="flex ml-[10px] flex-col items-center">
-				<p class="text-2lg">Current skin</p>
-				<PlayerModel src={currentSkin!!.src}/>
-				<div>
-					<Tooltip title="Add Skin" text="Add Skin" position="bottom">
-						<FileUploadButton refetch={skinController.refetch}/>
-					</Tooltip>
-				</div>
-			</div>
-
+			<CurrentSkinDisplay/>
 			{/* Skin Library */}
 				<div class="grid gap-x-20 gap-y-5 md:grid-cols-6 sm:grid-cols-3">
 					<For each={skins() ?? []} fallback={<div>No skins found.</div>}>
@@ -53,22 +60,51 @@ interface SkinDisplayProps {
 
 function SkinDisplayComponent(props: SkinDisplayProps) {
 
+	const skinController = useSkinController();
+	const notificationController = useNotifications();
+
 	const SelectSkinButton = () => {
 		return (
-			<Tooltip title="Set Skin" text="Set Skin" position="bottom">
-				<Button buttonStyle="iconPrimary" onClick={() => {
-					console.log("Set current skin to: ", props.skin.name)
+			<Tooltip title="Set Skin" text={props.skin.current ? "This skin is active!" : "Set skin"} position="bottom">
+				<Button buttonStyle="iconPrimary" disabled={props.skin.current} onClick={() => {
+					notificationController.set("skin_set_current", {
+						title: "Current skin set",
+						message: `Current skin set to ${props.skin.name}`
+					})
+
 					useCommand(() => bridge.commands.setSkin(props.skin))
-					
-					}}><CheckIcon/></Button>
+					skinController.refetch();
+					location.reload();
+					}}>
+						<CheckIcon/></Button>
 			</Tooltip>
 		)
 	}
 
 	const DeleteSkinButton = () => {
+		const deleteModal = createModal((p: ModalProps) => (
+			<Modal.Delete {...p} timeLeft={0} title="Delete Skin?" onDelete={() => {
+				skinController.removeSkin(props.skin.id)
+				notificationController.set("skin_delete", {
+					title: "Deleted skin",
+					message: `Removed skin ${props.skin.name}`
+				})
+
+				skinController.refetch();
+			}} >
+				<div>
+					<p>Are you sure you want to delete this skin?</p>
+
+				</div>
+			</Modal.Delete>
+		));
+
+
 		return (
-			<Tooltip title="Delete Skin" text="Delete Skin" position="bottom">
-				<Button buttonStyle="iconDanger" onClick={() => {useCommand(() => bridge.commands.removeSkin(props.skin.id))}} class=""><Trash01Icon/></Button>
+			<Tooltip title="Delete Skin" text={props.skin.current ? "This skin is active!" : "Delete Skin"} position="bottom">
+				<Button buttonStyle="iconDanger" disabled={props.skin.current} onClick={() => deleteModal.show()}>
+					<Trash01Icon/>
+				</Button>
 			</Tooltip>
 		)
 	}
@@ -89,7 +125,8 @@ function SkinDisplayComponent(props: SkinDisplayProps) {
 	)
 }
 
-const FileUploadButton = ({refetch} : {refetch: () => void}) => {
+const FileUploadButton = () => {
+	const skinController = useSkinController();
 	const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
 	const [skinName, setSkinName] = createSignal<string>("");
 	const [encodedFile, setEncodedFile] = createSignal("");
@@ -113,7 +150,7 @@ const FileUploadButton = ({refetch} : {refetch: () => void}) => {
 						};
 
 						useCommand(() => bridge.commands.addSkin(skin));
-						refetch();
+						skinController.refetch();
 						modalProps.hide();
 					}}
 				/>
@@ -161,7 +198,7 @@ const FileUploadButton = ({refetch} : {refetch: () => void}) => {
 
 
 interface SkinControllerContextFunc {
-	currentSkin: MinecraftSkin | undefined;
+	currentSkin: Resource<MinecraftSkin | null>;
 	skins: Resource<MinecraftSkin[]>;
 	addSkin: (skin: MinecraftSkin) => Promise<void>;
 	removeSkin: (uuid: string) => Promise<void>;
@@ -173,7 +210,6 @@ interface SkinControllerContextFunc {
 const SkinControllerContext = createContext<SkinControllerContextFunc>() as Context<SkinControllerContextFunc>;
 
 export function SkinControllerProvider(props: ParentProps) {
-	const accountController = useAccountController();
 
 	async function addSkin(skin: MinecraftSkin) {
 		await tryResult(() => bridge.commands.addSkin(skin));
@@ -185,6 +221,7 @@ export function SkinControllerProvider(props: ParentProps) {
 
 	async function setSkin(skin: MinecraftSkin) {
 		await tryResult(() => bridge.commands.setSkin(skin));
+		refetch();
 	}
 
 	async function getSkin(uuid: string) {
@@ -192,14 +229,16 @@ export function SkinControllerProvider(props: ParentProps) {
 	}
 
 
-	const [skins, {refetch: refetchSkins} ] = useCommand(() => bridge.commands.getSkins());
+	const [skins, { refetch: refetchSkins }] = useCommand(() => bridge.commands.getSkins());
+	const [currentSkin, { refetch: refetchCurrentSkin }] = useCommand(() => bridge.commands.getCurrentSkin())
 
 	function refetch() {
 		refetchSkins();
+		refetchCurrentSkin();
 	}
 
 	const func: SkinControllerContextFunc = {
-		currentSkin: accountController.defaultAccount()?.skin,
+		currentSkin,
 		skins,
 		addSkin,
 		removeSkin,

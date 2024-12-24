@@ -43,3 +43,11 @@ pub async fn save_skins() -> crate::Result<()> {
 	let skins = state.skin.write().await;
 	Ok(skins.save().await?)
 }
+
+#[tracing::instrument]
+pub async fn get_current_skin() -> crate::Result<Option<MinecraftSkin>> {
+	let state = State::get().await?;
+	let mut skins = state.skin.write().await;
+	let skin = skins.get_current_skin().await?;
+	Ok(skin)
+}

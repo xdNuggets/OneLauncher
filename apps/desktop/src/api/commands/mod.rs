@@ -90,6 +90,7 @@ macro_rules! collect_commands {
 			add_skin,
 			remove_skin,
 			save_skins,
+			get_current_skin,
 			// Other
 			set_window_style,
 			get_program_info,
