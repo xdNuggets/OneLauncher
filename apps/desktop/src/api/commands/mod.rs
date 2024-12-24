@@ -91,6 +91,7 @@ macro_rules! collect_commands {
 			remove_skin,
 			save_skins,
 			get_current_skin,
+			get_profile_skins,
 			// Other
 			set_window_style,
 			get_program_info,

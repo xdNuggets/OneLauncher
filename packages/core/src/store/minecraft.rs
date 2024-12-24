@@ -209,7 +209,8 @@ impl MinecraftState {
 		}
 		let state = State::get().await?;
 		let mut skin_controller = state.skin.write().await;
-		skin_controller.add_skin(skin.clone()).await?;
+		skin_controller.add_profile(profile.id.unwrap().clone()).await?;
+		skin_controller.add_skin(profile.id.unwrap().clone(), skin.clone()).await?;
 
 		let credentials = MinecraftCredentials {
 			id: profile_id.clone(),
@@ -219,7 +220,8 @@ impl MinecraftState {
 			#[allow(deprecated)]
 			expires: oauth_token.date
 				+ chrono::TimeDelta::seconds(oauth_token.value.expires_in as i64),
-			skin
+			skin,
+			skins: skin_controller.get_profile_skins(profile.id.unwrap().clone()).await?,
 		};
 
 		self.users.insert(profile_id, credentials.clone());
@@ -263,7 +265,8 @@ impl MinecraftState {
 
 		let state = State::get().await?;
 		let mut skin_controller = state.skin.write().await;
-		skin_controller.add_skin(skin.clone()).await?;
+		skin_controller.add_profile(cred_id.clone()).await?;
+		skin_controller.add_skin(cred_id.clone(), skin.clone()).await?;
 
 		let val = MinecraftCredentials {
 			id: cred_id,
@@ -273,7 +276,8 @@ impl MinecraftState {
 			#[allow(deprecated)]
 			expires: oauth_token.date
 				+ chrono::TimeDelta::seconds(oauth_token.value.expires_in as i64),
-			skin
+			skin,
+			skins: skin_controller.get_profile_skins(cred_id.clone()).await?,
 		};
 
 		self.users.insert(val.id, val.clone());
@@ -403,7 +407,6 @@ pub struct MinecraftLogin {
 	/// The xboxlive redirect URI.
 	pub redirect_uri: String,
 }
-
 // Struct for a Minecraft skin. Used for the skin changer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature="specta", derive(specta::Type))]
@@ -430,6 +433,8 @@ pub struct MinecraftCredentials {
 	pub expires: DateTime<Utc>,
 	// The Minecraft skin of the user. (Fetched upon creation from the username :) )
 	pub skin: MinecraftSkin,
+
+	pub skins: Vec<MinecraftSkin>,
 }
 
 #[tracing::instrument(skip(key))]
