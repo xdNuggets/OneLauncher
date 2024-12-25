@@ -18,7 +18,7 @@ impl SkinController {
 		let file_exists = skins_path.exists();
 		if !file_exists {
 			let mut file = File::create(&skins_path)?;
-			file.write(b"[]")?;
+			file.write(b"{}")?;
 			Ok(SkinController {
 				skins: HashMap::new(),
 			})

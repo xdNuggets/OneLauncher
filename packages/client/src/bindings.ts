@@ -514,9 +514,9 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async getSkin(uuid: string): Promise<Result<MinecraftSkin, string>> {
+	async getSkin(profileId: string, uuid: string): Promise<Result<MinecraftSkin, string>> {
 		try {
-			return { status: 'ok', data: await TAURI_INVOKE('get_skin', { uuid }) };
+			return { status: 'ok', data: await TAURI_INVOKE('get_skin', { profileId, uuid }) };
 		}
 		catch (e) {
 			if (e instanceof Error)
@@ -524,9 +524,9 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async setSkin(skin: MinecraftSkin): Promise<Result<null, string>> {
+	async setSkin(profileId: string, skin: MinecraftSkin): Promise<Result<null, string>> {
 		try {
-			return { status: 'ok', data: await TAURI_INVOKE('set_skin', { skin }) };
+			return { status: 'ok', data: await TAURI_INVOKE('set_skin', { profileId, skin }) };
 		}
 		catch (e) {
 			if (e instanceof Error)
@@ -534,7 +534,7 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async getSkins(): Promise<Result<MinecraftSkin[], string>> {
+	async getSkins(): Promise<Result<{ [key in string]: MinecraftSkin[] }, string>> {
 		try {
 			return { status: 'ok', data: await TAURI_INVOKE('get_skins') };
 		}
@@ -544,9 +544,9 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async addSkin(skin: MinecraftSkin): Promise<Result<null, string>> {
+	async addSkin(profileId: string, skin: MinecraftSkin): Promise<Result<null, string>> {
 		try {
-			return { status: 'ok', data: await TAURI_INVOKE('add_skin', { skin }) };
+			return { status: 'ok', data: await TAURI_INVOKE('add_skin', { profileId, skin }) };
 		}
 		catch (e) {
 			if (e instanceof Error)
@@ -554,9 +554,9 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async removeSkin(uuid: string): Promise<Result<null, string>> {
+	async removeSkin(profileId: string, uuid: string): Promise<Result<null, string>> {
 		try {
-			return { status: 'ok', data: await TAURI_INVOKE('remove_skin', { uuid }) };
+			return { status: 'ok', data: await TAURI_INVOKE('remove_skin', { profileId, uuid }) };
 		}
 		catch (e) {
 			if (e instanceof Error)
@@ -574,9 +574,19 @@ export const commands = {
 			else return { status: 'error', error: e as any };
 		}
 	},
-	async getCurrentSkin(): Promise<Result<MinecraftSkin | null, string>> {
+	async getCurrentSkin(profileId: string): Promise<Result<MinecraftSkin | null, string>> {
 		try {
-			return { status: 'ok', data: await TAURI_INVOKE('get_current_skin') };
+			return { status: 'ok', data: await TAURI_INVOKE('get_current_skin', { profileId }) };
+		}
+		catch (e) {
+			if (e instanceof Error)
+				throw e;
+			else return { status: 'error', error: e as any };
+		}
+	},
+	async getProfileSkins(profileId: string): Promise<Result<MinecraftSkin[], string>> {
+		try {
+			return { status: 'ok', data: await TAURI_INVOKE('get_profile_skins', { profileId }) };
 		}
 		catch (e) {
 			if (e instanceof Error)
@@ -993,6 +1003,7 @@ export interface MinecraftCredentials {
 	 */
 	expires: string;
 	skin: MinecraftSkin;
+	skins: MinecraftSkin[];
 };
 export interface MinecraftSkin { id: string; name: string; src: string; current: boolean };
 export interface OfflinePayload { offline: boolean };
